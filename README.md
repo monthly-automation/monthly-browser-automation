@@ -1,5 +1,23 @@
-Run to start:
-.venv\Scripts\activate
-pip install -r requirements.txt
-playwright install
-python main.py
+## Prerequisites
+
+- Python 3.11 or higher
+- pip (Python package manager)
+
+
+## Run to start
+
+1. `.venv\Scripts\activate`
+2. `pip install -r requirements.txt`
+3. `playwright install`
+4. `python main.py`
+
+
+## For Future Developers
+
+When working on this project, keep the following files and directories in mind:
+
+- `browser-automation/` – Contains the automation scripts for Amazon and Bol.com. Update or add scripts here for new automation tasks.
+- `main.py` – The main entry point that orchestrates the automation and email sending. Any changes to the workflow should be reflected here.
+- `requirements.txt` – Lists all Python dependencies. Add any new packages here and keep it up to date.
+- `.github/workflows/monthly.yml` – GitHub Actions workflow for scheduled automation. Update this if you change environment variables, dependencies, or the automation schedule.
+- `.env` variables are in GitHub secrets.

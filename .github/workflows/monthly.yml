@@ -1,0 +1,54 @@
+name: Monthly Automation
+
+on:
+  schedule:
+    - cron: '0 14 8 * *' # runs at 14:00 UTC (16:00 your time) on the 8th of each month
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install
+
+      - name: Run script
+        env:
+          AMAZON_SELLER_EMAIL: ${{ secrets.AMAZON_SELLER_EMAIL }}
+          AMAZON_SELLER_PASSWORD: ${{ secrets.AMAZON_SELLER_PASSWORD }}
+          AMAZON_SELLER_TOTP_SECRET: ${{ secrets.AMAZON_SELLER_TOTP_SECRET }}
+
+          BOL_USERNAME1: ${{ secrets.BOL_USERNAME1 }}
+          BOL_EMAIL_1: ${{ secrets.BOL_EMAIL_1 }}
+          BOL_PASSWORD_1: ${{ secrets.BOL_PASSWORD_1 }}
+
+          BOL_USERNAME2: ${{ secrets.BOL_USERNAME2 }}
+          BOL_EMAIL_2: ${{ secrets.BOL_EMAIL_2 }}
+          BOL_PASSWORD_2: ${{ secrets.BOL_PASSWORD_2 }}
+
+          BOL_USERNAME3: ${{ secrets.BOL_USERNAME3 }}
+          BOL_EMAIL_3: ${{ secrets.BOL_EMAIL_3 }}
+          BOL_PASSWORD_3: ${{ secrets.BOL_PASSWORD_3 }}
+
+          BOL_USERNAME4: ${{ secrets.BOL_USERNAME4 }}
+          BOL_EMAIL_4: ${{ secrets.BOL_EMAIL_4 }}
+          BOL_PASSWORD_4: ${{ secrets.BOL_PASSWORD_4 }}
+
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python main.py
