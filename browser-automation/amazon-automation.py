@@ -231,7 +231,7 @@ async def main():
                 else:
                     break
 
-        print("✅ All done. Press Enter to exit…")
+        print("✅ All done, exiting.")
 
 
 if __name__ == "__main__":

@@ -10,19 +10,32 @@ load_dotenv()
 
 URL = "https://partner.bol.com/sdd/cashboard/finances"
 
+async def save_debug_info(page, username, reason):
+    """Save debug information when something goes wrong"""
+    try:
+        content = await page.content()
+        with open(f"debug_{username}_{reason}.html", "w", encoding="utf-8") as f:
+            f.write(content)
+        
+        await page.screenshot(path=f"debug_{username}_{reason}.png", full_page=True)
+        print(f"📷 Debug saved: debug_{username}_{reason}.html and debug_{username}_{reason}.png")
+    except Exception as e:
+        print(f"⚠️ Could not save debug info: {e}")
+
 async def login_if_needed(page, email, password, username):
     print(f"🌐 Navigating to finances page for {username}…")
     await page.goto(URL)
     await page.wait_for_load_state("networkidle")
 
     try:
-        await page.wait_for_selector("css=table", timeout=3000)
+        await page.wait_for_selector("css=table", timeout=10000)
         print(f"✅ Already logged in as {username}.")
         return
     except TimeoutError:
         print(f"🔑 Not logged in — logging in as {username}…")
+        await save_debug_info(page, username, "before_login")
 
-    await page.wait_for_selector('input[name="j_username"]', timeout=5000)
+    await page.wait_for_selector('input[name="j_username"]', timeout=10000)  # Increased for CI
     await page.fill('input[name="j_username"]', email)
     await page.fill('input[name="j_password"]', password)
 
@@ -30,13 +43,11 @@ async def login_if_needed(page, email, password, username):
     await page.wait_for_load_state("networkidle")
 
     try:
-        await page.wait_for_selector("css=table", timeout=5000)
+        await page.wait_for_selector("css=table", timeout=15000)  # Increased for CI
         print(f"🎉 Logged in as {username}")
     except TimeoutError:
-        content = await page.content()
-        with open(f"login_failed_{username}.html", "w", encoding="utf-8") as f:
-            f.write(content)
-        raise Exception(f"❌ Login failed for {username}. Saved page content for debugging.")
+        await save_debug_info(page, username, "login_failed")
+        raise Exception(f"❌ Login failed for {username}. Saved debug info for investigation.")
 
 
 async def logout_if_needed(page):
@@ -75,8 +86,9 @@ async def logout_if_needed(page):
 
 async def download_current_specification(page, username, downloads_dir: Path):
     try:
+        print(f"🔍 Looking for specification link for {username}...")
         link = page.locator('a[data-test="specification-link"]')
-        await link.wait_for(timeout=3000)
+        await link.wait_for(timeout=5000)  # Increased timeout for CI
 
         async with page.expect_download() as download_info:
             await link.click()
@@ -179,14 +191,22 @@ async def main():
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=True,  # 👈 make it headless
-            # optionally add slow_mo=0 here
+            headless=True,
+            args=[
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage'
+            ]
         )
         context = await browser.new_context(
             locale="nl-NL",
             extra_http_headers={"Accept-Language": "nl-NL,nl;q=0.9"}
         )
         page = await context.new_page()
+        
+        # Add debugging info
+        print(f"🔧 Browser launched with viewport: {page.viewport_size}")
+        print(f"🔧 User agent: {await page.evaluate('() => navigator.userAgent')}")
 
         for i in range(1, 5):
             username = os.getenv(f"BOL_USERNAME{i}")
@@ -198,18 +218,30 @@ async def main():
                 continue
 
             print(f"\n=== 🚀 Processing {username} ===")
+            print(f"🔧 Environment check: {username} credentials present: {bool(username and email and password)}")
             await login_if_needed(page, email, password, username)
 
             await page.goto(URL)
             await page.wait_for_load_state("networkidle")
+            await page.wait_for_timeout(2000)  # Extra wait for CI
 
-            await page.wait_for_selector("puik-list-row", timeout=5000)
+            try:
+                await page.wait_for_selector("puik-list-row", timeout=10000)  # Increased for CI
+            except TimeoutError:
+                print(f"⚠️ Could not find puik-list-row for {username}, saving debug...")
+                await save_debug_info(page, username, "no_puik_list_row")
+                print(f"⚠️ Skipping {username}")
+                continue
 
             print("🔍 Checking for current specification…")
             await download_current_specification(page, username, downloads_dir)
 
             print(f"📂 Ready to download files for {username}…")
-            await download_invoices_for_last_month(page, username, downloads_dir)
+            try:
+                await download_invoices_for_last_month(page, username, downloads_dir)
+            except Exception as e:
+                print(f"❌ Error during invoice download for {username}: {e}")
+                await save_debug_info(page, username, "invoice_download_error")
 
             await logout_if_needed(page)
 

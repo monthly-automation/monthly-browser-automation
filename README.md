@@ -12,7 +12,7 @@
 4. `python main.py`
 
 
-## For Future Developers
+## Extra Information
 
 When working on this project, keep the following files and directories in mind:
 

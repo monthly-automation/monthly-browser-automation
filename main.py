@@ -30,7 +30,10 @@ def clear_downloads():
 
 
 def collect_files():
-    return list(DOWNLOADS_DIR.glob("*"))
+    # Collect both downloads and debug files
+    downloads = list(DOWNLOADS_DIR.glob("*"))
+    debug_files = list(Path(".").glob("debug_*.html")) + list(Path(".").glob("debug_*.png"))
+    return downloads + debug_files
 
 
 def send_email_with_attachments(files):
@@ -49,6 +52,7 @@ def send_email_with_attachments(files):
         f"Hi,\n\n"
         f"Please find attached the monthly reports from {last_month_str}.\n\n"
         f"Reports retrieved on {current_datetime_str}.\n\n"
+        f"If there are any debug_*.html or debug_*.png files attached, they contain debugging information for troubleshooting.\n\n"
         f"Best regards,\n"
         f"Automation Script"
     )
@@ -100,7 +104,6 @@ async def main():
         print("⚠️ No report files found to attach.")
     else:
         send_email_with_attachments(files)
-        pass
 
     print("🎉 All tasks completed. Exiting.")
 

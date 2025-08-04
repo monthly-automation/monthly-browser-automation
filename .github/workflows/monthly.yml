@@ -2,7 +2,7 @@ name: Monthly Automation
 
 on:
   schedule:
-    - cron: '0 14 8 * *' # runs at 14:00 UTC (16:00 your time) on the 8th of each month
+    - cron: '0 8 8 * *' # runs at 8:00 UTC (10:00 CET time) on the 8th of each month
   workflow_dispatch:
 
 jobs:
