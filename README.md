@@ -21,3 +21,11 @@ When working on this project, keep the following files and directories in mind:
 - `requirements.txt` – Lists all Python dependencies. Add any new packages here and keep it up to date.
 - `.github/workflows/monthly.yml` – GitHub Actions workflow for scheduled automation. Update this if you change environment variables, dependencies, or the automation schedule.
 - `.env` variables are in GitHub secrets.
+
+## Automations
+
+### Bol
+Uses account client id with api credentials to retrieve files through api calls.
+
+### Amazon
+The api is not available for this so a `playwright` script is used to simulate a headless browser that follows the similar steps a user would. 

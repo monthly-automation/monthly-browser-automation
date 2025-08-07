@@ -30,7 +30,6 @@ def clear_downloads():
 
 
 def collect_files():
-    # Collect both downloads and debug files
     downloads = list(DOWNLOADS_DIR.glob("*"))
     debug_files = list(Path(".").glob("debug_*.html")) + list(Path(".").glob("debug_*.png"))
     return downloads + debug_files
@@ -96,8 +95,8 @@ def run_script(script: Path):
 async def main():
     clear_downloads()
 
-    run_script(Path("browser-automation/amazon-automation.py"))
     run_script(Path("browser-automation/bol-automation.py"))
+    run_script(Path("browser-automation/amazon-automation.py"))
 
     files = collect_files()
     if not files:

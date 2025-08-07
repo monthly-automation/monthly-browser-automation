@@ -30,21 +30,22 @@ jobs:
           AMAZON_SELLER_PASSWORD: ${{ secrets.AMAZON_SELLER_PASSWORD }}
           AMAZON_SELLER_TOTP_SECRET: ${{ secrets.AMAZON_SELLER_TOTP_SECRET }}
 
-          BOL_USERNAME1: ${{ secrets.BOL_USERNAME1 }}
-          BOL_EMAIL_1: ${{ secrets.BOL_EMAIL_1 }}
-          BOL_PASSWORD_1: ${{ secrets.BOL_PASSWORD_1 }}
+          # Bol.com API credentials for 4 accounts
+          BOL_USERNAME_1: ${{ secrets.BOL_USERNAME_1 }}
+          BOL_CLIENT_ID_1: ${{ secrets.BOL_CLIENT_ID_1 }}
+          BOL_API_SECRET_1: ${{ secrets.BOL_API_SECRET_1 }}
 
-          BOL_USERNAME2: ${{ secrets.BOL_USERNAME2 }}
-          BOL_EMAIL_2: ${{ secrets.BOL_EMAIL_2 }}
-          BOL_PASSWORD_2: ${{ secrets.BOL_PASSWORD_2 }}
+          BOL_USERNAME_2: ${{ secrets.BOL_USERNAME_2 }}
+          BOL_CLIENT_ID_2: ${{ secrets.BOL_CLIENT_ID_2 }}
+          BOL_API_SECRET_2: ${{ secrets.BOL_API_SECRET_2 }}
 
-          BOL_USERNAME3: ${{ secrets.BOL_USERNAME3 }}
-          BOL_EMAIL_3: ${{ secrets.BOL_EMAIL_3 }}
-          BOL_PASSWORD_3: ${{ secrets.BOL_PASSWORD_3 }}
+          BOL_USERNAME_3: ${{ secrets.BOL_USERNAME_3 }}
+          BOL_CLIENT_ID_3: ${{ secrets.BOL_CLIENT_ID_3 }}
+          BOL_API_SECRET_3: ${{ secrets.BOL_API_SECRET_3 }}
 
-          BOL_USERNAME4: ${{ secrets.BOL_USERNAME4 }}
-          BOL_EMAIL_4: ${{ secrets.BOL_EMAIL_4 }}
-          BOL_PASSWORD_4: ${{ secrets.BOL_PASSWORD_4 }}
+          BOL_USERNAME_4: ${{ secrets.BOL_USERNAME_4 }}
+          BOL_CLIENT_ID_4: ${{ secrets.BOL_API_SECRET_4 }}
+          BOL_API_SECRET_4: ${{ secrets.BOL_API_SECRET_4 }}
 
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
