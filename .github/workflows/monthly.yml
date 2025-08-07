@@ -44,7 +44,7 @@ jobs:
           BOL_API_SECRET_3: ${{ secrets.BOL_API_SECRET_3 }}
 
           BOL_USERNAME_4: ${{ secrets.BOL_USERNAME_4 }}
-          BOL_CLIENT_ID_4: ${{ secrets.BOL_API_SECRET_4 }}
+          BOL_CLIENT_ID_4: ${{ secrets.BOL_CLIENT_ID_4 }}
           BOL_API_SECRET_4: ${{ secrets.BOL_API_SECRET_4 }}
 
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
