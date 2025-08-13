@@ -33,8 +33,22 @@ def collect_files():
     downloads = list(DOWNLOADS_DIR.glob("*"))
     return downloads
 
+def collect_debug_files():
+    """Collect debug screenshots and HTML files for email attachment"""
+    debug_files = []
+    
+    # Look for debug screenshots
+    for debug_file in Path(".").glob("debug_*.png"):
+        debug_files.append(debug_file)
+    
+    # Look for debug HTML files
+    for debug_file in Path(".").glob("debug_*.html"):
+        debug_files.append(debug_file)
+    
+    return debug_files
 
-def send_email_with_attachments(files):
+
+def send_email_with_attachments(files, debug_files=None, failure_mode=False):
     today = datetime.today()
     first_of_this_month = today.replace(day=1)
     last_month_date = first_of_this_month - timedelta(days=1)
@@ -44,16 +58,30 @@ def send_email_with_attachments(files):
     msg = EmailMessage()
     msg["From"] = SMTP_USER
     msg["To"] = MAIL_TO
-    msg["Subject"] = f"Monthly Reports - {last_month_str}"
+    
+    if failure_mode:
+        msg["Subject"] = f"⚠️ Automation Failure - {last_month_str}"
+        content = (
+            f"Hi,\n\n"
+            f"The monthly automation encountered an error while processing {last_month_str} reports.\n\n"
+            f"Error occurred on {current_datetime_str}.\n\n"
+            f"Debug screenshots and HTML files are attached to help diagnose the issue.\n\n"
+            f"Best regards,\n"
+            f"Automation Script"
+        )
+    else:
+        msg["Subject"] = f"Monthly Reports - {last_month_str}"
+        content = (
+            f"Hi,\n\n"
+            f"Please find attached the monthly reports from {last_month_str}.\n\n"
+            f"Reports retrieved on {current_datetime_str}.\n\n"
+            f"Best regards,\n"
+            f"Automation Script"
+        )
+    
+    msg.set_content(content)
 
-    msg.set_content(
-        f"Hi,\n\n"
-        f"Please find attached the monthly reports from {last_month_str}.\n\n"
-        f"Reports retrieved on {current_datetime_str}.\n\n"
-        f"Best regards,\n"
-        f"Automation Script"
-    )
-
+    # Attach report files
     for file_path in files:
         with open(file_path, "rb") as f:
             data = f.read()
@@ -63,7 +91,23 @@ def send_email_with_attachments(files):
                 subtype="octet-stream",
                 filename=file_path.name
             )
-        print(f"📎 Attached: {file_path.name}")
+        print(f"📎 Attached report: {file_path.name}")
+    
+    # Attach debug files if provided
+    if debug_files:
+        for debug_file in debug_files:
+            try:
+                with open(debug_file, "rb") as f:
+                    data = f.read()
+                    msg.add_attachment(
+                        data,
+                        maintype="application",
+                        subtype="octet-stream",
+                        filename=debug_file.name
+                    )
+                print(f"📎 Attached debug file: {debug_file.name}")
+            except Exception as e:
+                print(f"⚠️ Could not attach debug file {debug_file.name}: {e}")
 
     print("✉️ Sending email…")
     context = ssl.create_default_context()
@@ -92,15 +136,26 @@ def run_script(script: Path):
 
 async def main():
     clear_downloads()
+    amazon_failed = False
 
     run_script(Path("browser-automation/bol-automation.py"))
-    run_script(Path("browser-automation/amazon-automation.py"))
+    
+    # Check if Amazon automation failed
+    try:
+        run_script(Path("browser-automation/amazon-automation.py"))
+    except Exception as e:
+        print(f"❌ Amazon automation failed: {e}")
+        amazon_failed = True
 
     files = collect_files()
-    if not files:
-        print("⚠️ No report files found to attach.")
+    debug_files = collect_debug_files()
+    
+    if not files and not debug_files:
+        print("⚠️ No report files or debug files found to attach.")
     else:
-        send_email_with_attachments(files)
+        # Check if we should send email (uncomment the line below to enable email sending)
+        # send_email_with_attachments(files, debug_files, failure_mode=amazon_failed)
+        pass
 
     print("🎉 All tasks completed. Exiting.")
 
