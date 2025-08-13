@@ -164,74 +164,180 @@ async def main():
         # Set Accept-Language to English
         context = await browser.new_context(locale="en-US", extra_http_headers={"Accept-Language": "en-US,en;q=0.9"})
         page = await context.new_page()
-        await page.goto(URL)
-
-        # === LOGIN ===
-        await page.fill('input[name="email"]', EMAIL)
-        await page.click('input#continue')
-        await page.fill('input[name="password"]', PASSWORD)
-        await page.click('input#signInSubmit')
-        await page.fill('input[name="otpCode"]', pyotp.TOTP(TOTP_SECRET).now())
-        await page.click('input#auth-signin-button')
-        await page.wait_for_load_state("networkidle")
-        print("✅ Logged in")
-
-        # === Belgium first ===
-        await select_belgium(page)
-
-        # === Back to account switcher ===
-        await page.goto("https://sellercentral.amazon.com.be/account-switcher/default/merchantMarketplace")
-        await page.wait_for_load_state("networkidle")
-
-        # === Loop over countries ===
-        tcf_button = page.locator(".full-page-account-switcher-account-label", has_text="TCF Trading").first
-        await tcf_button.wait_for()
-
-        while True:
-            countries = await get_country_buttons(page, tcf_button)
-            if len(countries) == 0:
-                print("⚠️ No countries found — re-expanding TCF Trading.")
-                await tcf_button.click()
-                await asyncio.sleep(1)
-            else:
-                break
-
-        for btn in countries:
-            country = (await btn.locator(".full-page-account-switcher-account-label").inner_text()).strip()
-            await btn.click()
-            is_current = country.endswith("(current)")
-            if not is_current:
-                select_button = page.locator("button", has_text="Select account")
-                if await select_button.count() > 0 and await select_button.is_enabled():
-                    await select_button.click()
-                    await page.wait_for_load_state("networkidle")
-            primary_button = page.locator('button.kat-button--primary')
-            if await primary_button.count() > 0 and await primary_button.is_visible():
-                await primary_button.click()
-            await page.wait_for_load_state("networkidle")
-
-            await dismiss_tutorial(page)
-
+        
+        try:
             await page.goto(URL)
-            await page.wait_for_load_state("networkidle")
-            await dismiss_tutorial(page)
+            print("✅ Navigated to Amazon Seller Central")
+            
+            # Take screenshot of initial page
+            await page.screenshot(path="debug_01_initial_page.png", full_page=True)
+            print("📷 Screenshot saved: debug_01_initial_page.png")
 
-            await set_filters_and_request(page)
-            await wait_for_report_and_download(page, country)
+            # === LOGIN ===
+            print("🔐 Starting login process...")
+            
+            try:
+                await page.fill('input[name="email"]', EMAIL)
+                print("✅ Email filled")
+                await page.screenshot(path="debug_02_after_email.png", full_page=True)
+                print("📷 Screenshot saved: debug_02_after_email.png")
+                
+                await page.click('input#continue')
+                print("✅ Continue button clicked")
+                await page.wait_for_load_state("networkidle")
+                await page.screenshot(path="debug_03_after_continue.png", full_page=True)
+                print("📷 Screenshot saved: debug_03_after_continue.png")
+                
+                await page.fill('input[name="password"]', PASSWORD)
+                print("✅ Password filled")
+                await page.screenshot(path="debug_04_after_password.png", full_page=True)
+                print("📷 Screenshot saved: debug_04_after_password.png")
+                
+                await page.click('input#signInSubmit')
+                print("✅ Sign in button clicked")
+                await page.wait_for_load_state("networkidle")
+                await page.screenshot(path="debug_05_after_signin.png", full_page=True)
+                print("📷 Screenshot saved: debug_05_after_signin.png")
+                
+                await page.fill('input[name="otpCode"]', pyotp.TOTP(TOTP_SECRET).now())
+                print("✅ TOTP code filled")
+                await page.screenshot(path="debug_06_after_totp.png", full_page=True)
+                print("📷 Screenshot saved: debug_06_after_totp.png")
+                
+                await page.click('input#auth-signin-button')
+                print("✅ TOTP submit button clicked")
+                await page.wait_for_load_state("networkidle")
+                await page.screenshot(path="debug_07_after_totp_submit.png", full_page=True)
+                print("📷 Screenshot saved: debug_07_after_totp_submit.png")
+                
+                print("✅ Logged in successfully")
+                
+            except Exception as login_error:
+                print(f"❌ Login failed: {login_error}")
+                await page.screenshot(path="debug_login_failed.png", full_page=True)
+                print("📷 Screenshot saved: debug_login_failed.png")
+                
+                # Try to get page content for debugging
+                try:
+                    page_content = await page.content()
+                    with open("debug_login_page.html", "w", encoding="utf-8") as f:
+                        f.write(page_content)
+                    print("📄 Page HTML saved: debug_login_page.html")
+                except Exception as e:
+                    print(f"⚠️ Could not save page HTML: {e}")
+                
+                raise login_error
 
-            await page.goto("https://sellercentral.amazon.com.be/account-switcher/default/merchantMarketplace")
-            await page.wait_for_load_state("networkidle")
+            # === Belgium first ===
+            try:
+                await select_belgium(page)
+                print("✅ Belgium selection completed")
+            except Exception as belgium_error:
+                print(f"❌ Belgium selection failed: {belgium_error}")
+                await page.screenshot(path="debug_belgium_selection_failed.png", full_page=True)
+                print("📷 Screenshot saved: debug_belgium_selection_failed.png")
+                raise belgium_error
 
-            # Ensure TCF is expanded again
-            while True:
-                countries = await get_country_buttons(page, tcf_button)
-                if len(countries) == 0:
-                    await tcf_button.click()
-                    await asyncio.sleep(1)
-                else:
-                    break
+            # === Back to account switcher ===
+            try:
+                await page.goto("https://sellercentral.amazon.com.be/account-switcher/default/merchantMarketplace")
+                await page.wait_for_load_state("networkidle")
+                print("✅ Navigated to account switcher")
+            except Exception as nav_error:
+                print(f"❌ Navigation to account switcher failed: {nav_error}")
+                await page.screenshot(path="debug_account_switcher_nav_failed.png", full_page=True)
+                print("📷 Screenshot saved: debug_account_switcher_nav_failed.png")
+                raise nav_error
 
-        print("✅ All done, exiting.")
+            # === Loop over countries ===
+            try:
+                tcf_button = page.locator(".full-page-account-switcher-account-label", has_text="TCF Trading").first
+                await tcf_button.wait_for()
+                print("✅ TCF Trading button found")
+
+                while True:
+                    countries = await get_country_buttons(page, tcf_button)
+                    if len(countries) == 0:
+                        print("⚠️ No countries found — re-expanding TCF Trading.")
+                        await tcf_button.click()
+                        await asyncio.sleep(1)
+                    else:
+                        break
+
+                print(f"✅ Found {len(countries)} countries to process")
+
+                for i, btn in enumerate(countries):
+                    try:
+                        country = (await btn.locator(".full-page-account-switcher-account-label").inner_text()).strip()
+                        print(f"🔄 Processing country {i+1}/{len(countries)}: {country}")
+                        
+                        await btn.click()
+                        is_current = country.endswith("(current)")
+                        if not is_current:
+                            select_button = page.locator("button", has_text="Select account")
+                            if await select_button.count() > 0 and await select_button.is_enabled():
+                                await select_button.click()
+                                await page.wait_for_load_state("networkidle")
+                        primary_button = page.locator('button.kat-button--primary')
+                        if await primary_button.count() > 0 and await primary_button.is_visible():
+                            await primary_button.click()
+                        await page.wait_for_load_state("networkidle")
+
+                        await dismiss_tutorial(page)
+
+                        await page.goto(URL)
+                        await page.wait_for_load_state("networkidle")
+                        await dismiss_tutorial(page)
+
+                        await set_filters_and_request(page)
+                        await wait_for_report_and_download(page, country)
+
+                        await page.goto("https://sellercentral.amazon.com.be/account-switcher/default/merchantMarketplace")
+                        await page.wait_for_load_state("networkidle")
+
+                        # Ensure TCF is expanded again
+                        while True:
+                            countries = await get_country_buttons(page, tcf_button)
+                            if len(countries) == 0:
+                                await tcf_button.click()
+                                await asyncio.sleep(1)
+                            else:
+                                break
+                                
+                        print(f"✅ Completed processing for {country}")
+                        
+                    except Exception as country_error:
+                        print(f"❌ Failed to process country {country}: {country_error}")
+                        await page.screenshot(path=f"debug_country_{country.replace(' ', '_')}_failed.png", full_page=True)
+                        print(f"📷 Screenshot saved: debug_country_{country.replace(' ', '_')}_failed.png")
+                        # Continue with next country instead of failing completely
+                        continue
+
+                print("✅ All countries processed")
+
+            except Exception as countries_error:
+                print(f"❌ Country processing failed: {countries_error}")
+                await page.screenshot(path="debug_countries_processing_failed.png", full_page=True)
+                print("📷 Screenshot saved: debug_countries_processing_failed.png")
+                raise countries_error
+
+            print("✅ All done, exiting.")
+            
+        except Exception as main_error:
+            print(f"❌ Main execution failed: {main_error}")
+            await page.screenshot(path="debug_main_execution_failed.png", full_page=True)
+            print("📷 Screenshot saved: debug_main_execution_failed.png")
+            
+            # Try to get page content for debugging
+            try:
+                page_content = await page.content()
+                with open("debug_main_failed_page.html", "w", encoding="utf-8") as f:
+                    f.write(page_content)
+                print("📄 Page HTML saved: debug_main_failed_page.html")
+            except Exception as e:
+                print(f"⚠️ Could not save page HTML: {e}")
+            
+            raise main_error
 
 
 if __name__ == "__main__":
