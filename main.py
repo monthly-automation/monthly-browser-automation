@@ -146,6 +146,11 @@ async def main():
     except Exception as e:
         print(f"❌ Amazon automation failed: {e}")
         amazon_failed = True
+    
+    # Also check for failure marker file
+    if Path("amazon_automation_failed.txt").exists():
+        amazon_failed = True
+        print("⚠️ Amazon automation failure marker detected")
 
     files = collect_files()
     debug_files = collect_debug_files()
@@ -153,9 +158,8 @@ async def main():
     if not files and not debug_files:
         print("⚠️ No report files or debug files found to attach.")
     else:
-        # Check if we should send email (uncomment the line below to enable email sending)
-        # send_email_with_attachments(files, debug_files, failure_mode=amazon_failed)
-        pass
+        # Send email with debug files if Amazon failed
+        send_email_with_attachments(files, debug_files, failure_mode=amazon_failed)
 
     print("🎉 All tasks completed. Exiting.")
 

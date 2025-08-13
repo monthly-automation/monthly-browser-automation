@@ -3,6 +3,7 @@ from playwright.async_api import async_playwright, TimeoutError
 import os, pyotp
 from dotenv import load_dotenv
 from pathlib import Path
+from datetime import datetime
 
 load_dotenv()
 EMAIL = os.getenv("AMAZON_SELLER_EMAIL")
@@ -336,6 +337,15 @@ async def main():
                 print("📄 Page HTML saved: debug_main_failed_page.html")
             except Exception as e:
                 print(f"⚠️ Could not save page HTML: {e}")
+            
+            # Create a failure marker file
+            try:
+                with open("amazon_automation_failed.txt", "w") as f:
+                    f.write(f"Amazon automation failed at {datetime.now().isoformat()}\n")
+                    f.write(f"Error: {main_error}\n")
+                print("📝 Failure marker file created: amazon_automation_failed.txt")
+            except Exception as e:
+                print(f"⚠️ Could not create failure marker: {e}")
             
             raise main_error
 
